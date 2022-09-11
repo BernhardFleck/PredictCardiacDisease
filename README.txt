@@ -23,3 +23,11 @@ Team Members:
 Bernhard Fleck
 Nicole König
 Thomas Plöchl
+
+Hints for the installation:
+------------------------------------------------------
+Error message: 
+"npm ERR! gyp ERR! find VS VCINSTALLDIR not set, not running in VS Command Prompt" 
+OR 
+"npm ERR! gyp ERR! stack Error: Could not find any Visual Studio installation to use"
+-> even though it is already installed => set up a new environment variable with key "VCINSTALLDIR" and value "your Path to the VS folder"
