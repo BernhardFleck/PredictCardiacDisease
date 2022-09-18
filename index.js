@@ -19,6 +19,7 @@ fs.createReadStream("./heart_disease_uci_dataset_reduced.csv")
         let numColumn = parseInt(row.pop())
         let trainingRow = { input: row.map(Number), output: [numColumn] }
         trainingData.push(trainingRow)
+        
 
     })
     .on("error", function (error) {
