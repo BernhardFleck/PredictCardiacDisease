@@ -8,18 +8,23 @@ app.use(express.static('public'));
 http.listen(PORT, () => console.log(`server listening on port ${PORT}!`));
 
 var brain = require("brain.js");
-var net = new brain.recurrent.LSTM(); //LSTM vs NeuronalNetwork ?
+var model = new brain.NeuralNetworkGPU();
 
 let trainingData = []
 const fs = require("fs");
 const { parse } = require("csv-parse");
-fs.createReadStream("./heart_trainingData.csv")
+fs.createReadStream("./heart_trainingDataNormalized.csv")
     .pipe(parse({ delimiter: ";", from_line: 2 }))
     .on("data", function (row) {
-        let heartDiseaseColumn = parseInt(row.pop())
-        let trainingRow = { input: row.map(Number), output: [heartDiseaseColumn] }
+        //console.log(row)
+        let heartDiseaseColumn = parseFloat(row.pop())
+        //console.log(heartDiseaseColumn)
+        //console.log(row)
+        //console.log(row.map(parseFloat))
+        let trainingRow = { input: row.map(parseFloat), output: [heartDiseaseColumn] }
         trainingData.push(trainingRow)
         //console.log(trainingRow)
+        //console.log(trainingData)
     })
     .on("error", function (error) {
         console.log(error.message);
@@ -27,10 +32,12 @@ fs.createReadStream("./heart_trainingData.csv")
     .on("end", function () {
         //console.log(trainingData)
         console.log("TRAINING - START")
-        net.train(trainingData, {
+        model.train(trainingData, {
             logPeriod: 1,
             log: true,
-            iterations: 5
+            //errorThresh: 0.0001,
+            //learningRate: 0.6,
+            iterations: 50
         });
         console.log("TRAINING - END")
 
@@ -43,12 +50,14 @@ function tryOutTestData() {
     let correctCounter = 0
     let failedCounter = 0
 
-    fs.createReadStream("./heart_testData.csv")
+    fs.createReadStream("./heart_testDataNormalized.csv")
         .pipe(parse({ delimiter: ";", from_line: 2 }))
         .on("data", function (row) {
-            let heartDiseaseColumn = parseInt(row.pop())
-            let testingRow = row.map(Number)
-            let output = net.run(testingRow)[0];
+            let heartDiseaseColumn = parseFloat(row.pop())
+            let testingRow = row.map(parseFloat)
+            let output = model.run(testingRow)[0];
+            if (output > 0.5) output = 1.00
+            else output = 0.00
             let isPredictionCorrect = output == heartDiseaseColumn
 
             if (isPredictionCorrect) {
