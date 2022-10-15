@@ -13,7 +13,7 @@ var net = new brain.recurrent.LSTM(); //LSTM vs NeuronalNetwork ?
 let trainingData = []
 const fs = require("fs");
 const { parse } = require("csv-parse");
-fs.createReadStream("./heart.csv")
+fs.createReadStream("./heart_trainingData.csv")
     .pipe(parse({ delimiter: ";", from_line: 2 }))
     .on("data", function (row) {
         let heartDiseaseColumn = parseInt(row.pop())
@@ -34,12 +34,42 @@ fs.createReadStream("./heart.csv")
         });
         console.log("TRAINING - END")
 
-        var expectedOutputOf1 = [59, 0, 2, 164, 1, 2, 90]
-        var expectedOutputOf0 = [38, 0, 1, 138, 0, 0, 173]
-        var output = net.run(expectedOutputOf0)[0];
-        console.log(output);
-        console.log("END OF EVERYTHING")
-
+        tryOutTestData()
     });
 
-    //TODO training vs test data
+function tryOutTestData() {
+    console.log("TESTING DATA - START")
+    let counter = 0
+    let correctCounter = 0
+    let failedCounter = 0
+
+    fs.createReadStream("./heart_testData.csv")
+        .pipe(parse({ delimiter: ";", from_line: 2 }))
+        .on("data", function (row) {
+            let heartDiseaseColumn = parseInt(row.pop())
+            let testingRow = row.map(Number)
+            let output = net.run(testingRow)[0];
+            let isPredictionCorrect = output == heartDiseaseColumn
+
+            if (isPredictionCorrect) {
+                console.log(`${testingRow} CORRECT prediction `)
+                correctCounter++
+            }
+            else {
+                console.log(`${testingRow} FAILED prediction. Output ${output} although ${heartDiseaseColumn} was expected`)
+                failedCounter++
+            }
+            counter++
+        })
+        .on("error", function (error) {
+            console.log(error.message);
+        })
+        .on("end", function () {
+            console.log("TESTING DATA - END")
+            let failedPercentage = (failedCounter / counter * 100).toFixed(2)
+            let correctPercentage = (correctCounter / counter * 100).toFixed(2)
+            console.log(`FAILED ${failedPercentage}%; CORRECT ${correctPercentage}%`)
+            console.log(`COUNTED ${counter} rows`)
+        });
+}
+
