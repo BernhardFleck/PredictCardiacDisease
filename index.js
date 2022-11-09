@@ -8,7 +8,12 @@ app.use(express.static('public'));
 http.listen(PORT, () => console.log(`server listening on port ${PORT}!`));
 
 var brain = require("brain.js");
-var model = new brain.NeuralNetworkGPU();
+const config = {
+    hiddenLayers: [900, 2], // array of ints for the sizes of the hidden layers in the network
+    activation: 'sigmoid', // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
+    leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
+};
+var model = new brain.NeuralNetworkGPU(config);
 
 let trainingData = []
 const fs = require("fs");
@@ -16,15 +21,9 @@ const { parse } = require("csv-parse");
 fs.createReadStream("./heart_trainingDataNormalized.csv")
     .pipe(parse({ delimiter: ";", from_line: 2 }))
     .on("data", function (row) {
-        //console.log(row)
         let heartDiseaseColumn = parseFloat(row.pop())
-        //console.log(heartDiseaseColumn)
-        //console.log(row)
-        //console.log(row.map(parseFloat))
         let trainingRow = { input: row.map(parseFloat), output: [heartDiseaseColumn] }
         trainingData.push(trainingRow)
-        //console.log(trainingRow)
-        //console.log(trainingData)
     })
     .on("error", function (error) {
         console.log(error.message);
@@ -36,8 +35,8 @@ fs.createReadStream("./heart_trainingDataNormalized.csv")
             logPeriod: 1,
             log: true,
             //errorThresh: 0.0001,
-            //learningRate: 0.6,
-            iterations: 50
+            //learningRate: 0.505,
+            iterations: 500
         });
         console.log("TRAINING - END")
 
@@ -56,10 +55,11 @@ function tryOutTestData() {
             let heartDiseaseColumn = parseFloat(row.pop())
             let testingRow = row.map(parseFloat)
             let output = model.run(testingRow)[0];
+
             if (output > 0.5) output = 1.00
             else output = 0.00
-            let isPredictionCorrect = output == heartDiseaseColumn
 
+            let isPredictionCorrect = output == heartDiseaseColumn
             if (isPredictionCorrect) {
                 console.log(`${testingRow} CORRECT prediction `)
                 correctCounter++
